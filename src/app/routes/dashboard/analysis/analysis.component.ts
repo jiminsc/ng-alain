@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { NzMessageService } from 'ng-zorro-antd';
-import { getTimeDistance, yuan } from 'app/utils/utils';
-import { getFakeChartData } from '../../../../../_mock/chart.service';
+import { getTimeDistance, yuan } from '@delon/abc';
+import { _HttpClient } from '@delon/theme';
 
 @Component({
     selector: 'app-dashboard-analysis',
@@ -25,17 +25,20 @@ export class DashboardAnalysisComponent implements OnInit {
         };
     });
 
-    constructor(public msg: NzMessageService) {}
+    constructor(private http: _HttpClient, public msg: NzMessageService) {}
 
     ngOnInit() {
-        setTimeout(() => {
-            this.data = getFakeChartData;
+        this.http.get('/chart').subscribe((res: any) => {
+            res.offlineData.forEach((item: any) => {
+                item.chart = Object.assign([], res.offlineChartData);
+            });
+            this.data = res;
             this.loading = false;
             this.changeSaleType();
-        }, 500);
+        });
     }
 
-    setDate(type: string) {
+    setDate(type: any) {
         const rank = getTimeDistance(type);
         this.q.start = rank[0];
         this.q.end = rank[1];
@@ -62,7 +65,7 @@ export class DashboardAnalysisComponent implements OnInit {
         this.salesPieData = this.salesType === 'all' ? this.data.salesTypeData : (
             this.salesType === 'online' ? this.data.salesTypeDataOnline : this.data.salesTypeDataOffline
         );
-        this.salesTotal = this.salesPieData.reduce((pre, now) => now.y + pre, 0);
+        if (this.salesPieData) this.salesTotal = this.salesPieData.reduce((pre, now) => now.y + pre, 0);
     }
 
     handlePieValueFormat(value: any) {
